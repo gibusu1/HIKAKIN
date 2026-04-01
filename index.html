@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HIKAMANI STG - Demo</title>
+    <style>
+        body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: white; overflow: hidden; }
+        canvas { border: 2px solid #fff; background: #222; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // 1. 基本データ設定
+        let player = { x: 180, y: 500, size: 30, speed: 5 };
+        let bullets = [];
+        let enemies = [];
+        let score = 0;
+        let keys = {};
+
+        // キー入力監視
+        window.addEventListener("keydown", e => keys[e.code] = true);
+        window.addEventListener("keyup", e => keys[e.code] = false);
+
+        function update() {
+            // 自機の移動
+            if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
+            if (keys["ArrowRight"] && player.x < canvas.width - player.size) player.x += player.speed;
+            
+            // 弾の発射 (Spaceキー)
+            if (keys["Space"]) {
+                if (bullets.length < 10) { // 同時発射数制限
+                    bullets.push({ x: player.x + 12, y: player.y, speed: 7 });
+                }
+            }
+
+            // 弾の移動
+            bullets.forEach((b, i) => {
+                b.y -= b.speed;
+                if (b.y < 0) bullets.splice(i, 1);
+            });
+
+            // 敵の生成と移動
+            if (Math.random() < 0.02) {
+                enemies.push({ x: Math.random() * (canvas.width - 30), y: -30, speed: 2 });
+            }
+            enemies.forEach((en, i) => {
+                en.y += en.speed;
+                if (en.y > canvas.height) enemies.splice(i, 1);
+
+                // 当たり判定 (弾 vs 敵)
+                bullets.forEach((b, bi) => {
+                    if (b.x < en.x + 30 && b.x + 5 > en.x && b.y < en.y + 30 && b.y + 5 > en.y) {
+                        enemies.splice(i, 1);
+                        bullets.splice(bi, 1);
+                        score += 100;
+                    }
+                });
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 自機を描画 (後でヒカマニ画像に差し替え)
+            ctx.fillStyle = "cyan";
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // 弾を描画
+            ctx.fillStyle = "yellow";
+            bullets.forEach(b => ctx.fillRect(b.x, b.y, 5, 10));
+
+            // 敵を描画 (後で素材に差し替え)
+            ctx.fillStyle = "red";
+            enemies.forEach(en => ctx.fillRect(en.x, en.y, 30, 30));
+
+            // スコア表示
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText(`SCORE: ${score}`, 10, 30);
+
+            requestAnimationFrame(main);
+        }
+
+        function main() {
+            update();
+            draw();
+        }
+
+        main();
+    </script>
+</body>
+</html>
